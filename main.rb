@@ -1,37 +1,41 @@
 # -- coding: utf-8
 require 'anemone'
 require "kconv"
+require 'rubygems'
+require 'mongoid'
+Mongoid.load!("./mongoid.yml", :development)
+
+require './movie.rb'
 require './yahoo.rb'
 require './pia.rb'
+require './imdb.rb'
+require './review.rb'
+require './actor.rb'
 require './html.rb'
+I18n.enforce_available_locales = false
 
-#yahoo = "http://movies.yahoo.co.jp/roadshow/calendar/tw2.php"
 yahoo = "http://movies.yahoo.co.jp/roadshow"
 pia = "http://cinema.pia.co.jp/roadshow/"
+imdb = "http://www.imdb.com/movies-in-theaters/?ref_=nv_mv_inth_1"
 #Anemone.crawl("http://info.movies.yahoo.co.jp/detail/tymv/id346630/") do |anemone| 
-Anemone.crawl(yahoo, depth_limit: 1) do |anemone| 
+#Anemone.crawl(yahoo) do |anemone| 
 #Anemone.crawl(pia, depth_limit: 1) do |anemone| 
-#Anemone.crawl("http://www.imdb.com/movies-in-theaters/?ref_=nv_mv_inth_1") do |anemone| 
-#Anemone.crawl("http://www.imdb.com/title/tt1800246/") do |anemone| 
+Anemone.crawl(imdb, depth_limit: 1) do |anemone| 
   anemone.on_every_page do |page| 
     if /yahoo.co.jp/ =~ page.url.to_s
-      obj = Yahoo.new(page)
-    else
-      Pia.new(page)
+      obj = Yahoo.new
+      obj.read(page)
+      if Yahoo.where(mid: obj.mid).size == 0
+        obj.save! 
+      else
+        obj = Yahoo.where(mid: obj.mid).first
+      end
+      obj.set_reviews
+    elsif /roadshow/ =~ page.url.to_s
+      Pia.read(page)
+    elsif /imdb/ =~ page.url.to_s
+      Imdb.read(page)
     end
-    obj.reviews
     exit
-
-    #IMDb
-    #doc.css('h1.header span').each do |title|
-    #  p title.inner_text()
-    #end
-    
-    #doc.css('h1 strong').each do |title|
-    #  p title.inner_text().encoding
-    #end
-    #p page.url
-    #p page.doc.xpath("//head/title/text()").first.to_s if page.doc
-    #p page.body[0..200]
   end
 end
