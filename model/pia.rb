@@ -2,6 +2,7 @@ class Pia < Movie
   include Mongoid::Document
   include Mongoid::Timestamps
   
+  @@photo_url = "http://cinema.pia.co.jp/piaphoto/title/450/"
   @@review_url = "http://cinema.pia.co.jp/imp/"
   @@review_top_url = "http://cinema.pia.co.jp/"
 
@@ -9,9 +10,18 @@ class Pia < Movie
     Html.doc(page.url).css('ul.commonMovieList li').each do |movie|
       obj  = Movie.new
       link = movie.css('div')[1].css('p span a')
-      obj.title = link.text
+
       obj.mid_pia = link.attr('href').to_s.gsub(/\//,"").gsub(/title/,"")
+      if Movie.where(mid_pia: obj.mid_pia).first
+        obj = Movie.where(mid_pia: obj.mid_pia).first
+      end
+      obj.title = link.text
+      p obj.title
+
       obj.description = movie.css('div')[1].css('p').text
+      d = movie.css('div')[2].css('p.jumpLink').text.scan(/(\d{4})年(\d{1,})月(\d{1,})日/).first
+      next unless d
+      obj.open_date = Date.new(d[0].to_i,d[1].to_i,d[2].to_i)
 
       html = movie.css('div')[2].inner_html.gsub(/\n/,"")
       info = html.scan(/監督.<\/strong>(.*)<br>.*出演.<\/strong>(.*)<br>.*配給/)
@@ -19,11 +29,10 @@ class Pia < Movie
       obj.director = info[0][0] if info.present?
       info[0][1].gsub(/\t/,"").split("、").each{|a| obj.actors.build(name: a)}
 
-      if Movie.where(mid_pia: obj.mid_pia).first
-        obj = Movie.where(mid_pia: obj.mid_pia).first
-      else
-        obj.save
-      end
+      #画像
+      url = @@photo_url + obj.mid_pia.to_s + "_1.jpg"
+      obj.image = open(url)
+      obj.save
       self.reviews(obj)
     end
   end

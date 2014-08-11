@@ -6,7 +6,12 @@ class Movie
   field :mid_yahoo, type: Integer
   field :mid_pia, type: Integer
   field :mid_imdb, type: Integer
+  field :mid_tomato, type: Integer
   field :director, type: String
+  field :open_date, type: Date
+
+  mount_uploader :image, ImageUploader
+  attr_accessible :image, :image_cache
 
   embeds_many :reviews
   has_and_belongs_to_many :actors

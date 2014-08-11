@@ -1,3 +1,4 @@
+require_relative "movie.rb"
 class Imdb < Movie
   include Mongoid::Document
   include Mongoid::Timestamps
