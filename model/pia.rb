@@ -27,7 +27,15 @@ class Pia < Movie
       info = html.scan(/監督.<\/strong>(.*)<br>.*出演.<\/strong>(.*)<br>.*配給/)
       next unless info.present?
       obj.director = info[0][0] if info.present?
-      info[0][1].gsub(/\t/,"").split("、").each{|a| obj.actors.build(name: a)}
+
+      info[0][1].gsub(/\t/,"").split("、").each do |a|
+        actor = Actor.where(name: a).first
+        if actor
+          actor.movie_ids << obj._id unless actor.movie_ids.include? obj._id
+        else
+          obj.actors.build(name: a)
+        end
+      end
 
       #画像
       url = @@photo_url + obj.mid_pia.to_s + "_1.jpg"
@@ -49,9 +57,9 @@ class Pia < Movie
       time = tmp.css(".commonPostInfo").text.scan(/\w+/)
       datetime = Time.new(time[0], time[1], time[2], time[3], time[4])
       content = tmp.css("#mainImpEntry p")[2].text
-      unless Review.where(rid_pia: rid_pia).first
+      unless obj.reviews.where(rid: rid_pia).first
         obj.reviews.create(
-          title: title, rid_pia: rid_pia, rating: rating, datetime: datetime, content: content)
+          title: title, rid: rid_pia, rating: rating, datetime: datetime, content: content)
       end
     end
   end
