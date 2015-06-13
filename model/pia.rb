@@ -39,7 +39,7 @@ class Pia < Movie
 
       #画像
       url = @@photo_url + obj.mid_pia.to_s + "_1.jpg"
-      obj.image = open(url)
+      obj.remote_image_url = url
       obj.save
       self.reviews(obj)
     end
